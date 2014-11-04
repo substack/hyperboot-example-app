@@ -1,0 +1,16 @@
+body {
+  background-color: purple;
+  color: cyan;
+  font-size: 3.5em;
+}
+
+input[type="text"] {
+  position: relative;
+  font-size: 0.5em;
+  top: -5px;
+  width: 150px;
+}
+
+#result {
+  color: pink;
+}

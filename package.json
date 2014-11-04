@@ -1,0 +1,14 @@
+{
+  "name": "hyperboot-example-app",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "hyperboot": "^1.0.0",
+    "html-inline": "^1.0.1"
+  },
+  "scripts": {
+    "build": "browserify app/main.js -o app/bundle.js",
+    "watch": "watchify app/main.js -o app/bundle.js -dv",
+    "release": "npm run build && html-inline app/index.html | hyperboot release"
+  }
+}
