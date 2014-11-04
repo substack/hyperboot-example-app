@@ -6,6 +6,9 @@ This is an example app for
 [html-inline](https://npmjs.org/package/html-inline)
 to generate releases.
 
+You could also check out [packify](https://npmjs.org/package/packify), which
+combines the browserify and html inline steps.
+
 # generating releases
 
 Change the files in `app/`, and then generate a new release with `npm run
