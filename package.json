@@ -4,7 +4,11 @@
   "private": true,
   "dependencies": {
     "hyperboot": "^1.0.0",
-    "html-inline": "^1.0.1"
+    "html-inline": "^1.0.1",
+    "browserify": "^6.2.0",
+    "watchify": "^2.1.1",
+    "gamma": "^1.0.0",
+    "observable": "^2.1.3"
   },
   "scripts": {
     "build": "browserify app/main.js -o app/bundle.js",
