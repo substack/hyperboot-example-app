@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "hyperboot": "^1.0.0",
+    "hyperboot": "^2.0.0",
     "html-inline": "^1.0.1",
     "browserify": "^6.2.0",
     "watchify": "^2.1.1",
