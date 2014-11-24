@@ -1,0 +1,22 @@
+[
+  {
+    "hash": "f5f15b0fab022ec80b692cccde482b273ca439e4e90b7ed788657627cbd20c3a",
+    "version": "1.0.0",
+    "message": "first release!"
+  },
+  {
+    "hash": "2bce7a513db8abd67cd52317657de90893147c0146fdd4365c4bcfc3ce6c5073",
+    "version": "1.1.0",
+    "message": "configuration button in the latest hyperboot version"
+  },
+  {
+    "boot": true,
+    "hash": "a5366576913f512cbc3c241cdfdf843cb79cac8e7d4da98893611cad30edba99",
+    "version": "2.0.0"
+  },
+  {
+    "boot": true,
+    "hash": "f9c699c8a7a948c01318930f2fa63a3d32396f6b6b793df733df34ac50c04768",
+    "version": "2.0.1"
+  }
+]
