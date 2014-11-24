@@ -1,0 +1,347 @@
+<html>
+  <head>
+    <style>body {
+  background-color: darkblue;
+  color: cyan;
+  font-size: 3.5em;
+}
+
+input[type="text"] {
+  position: relative;
+  font-size: 0.5em;
+  top: -5px;
+  width: 150px;
+}
+
+#result {
+  color: pink;
+}
+</style>
+  </head>
+  <body>
+    <div>
+      gamma(<input type="text" id="n" value="1.23">)
+      = <span id="result"></span>.
+    </div>
+    <script>(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var gamma = require('gamma');
+var observable = require('observable');
+
+var result = document.querySelector('#result');
+var obs = observable.input(document.querySelector('#n'));
+obs(function (value) {
+    result.textContent = gamma(Number(value));
+});
+
+},{"gamma":2,"observable":3}],2:[function(require,module,exports){
+// transliterated from the python snippet here:
+// http://en.wikipedia.org/wiki/Lanczos_approximation
+
+var g = 7;
+var p = [
+    0.99999999999980993,
+    676.5203681218851,
+    -1259.1392167224028,
+    771.32342877765313,
+    -176.61502916214059,
+    12.507343278686905,
+    -0.13857109526572012,
+    9.9843695780195716e-6,
+    1.5056327351493116e-7
+];
+
+var g_ln = 607/128;
+var p_ln = [
+    0.99999999999999709182,
+    57.156235665862923517,
+    -59.597960355475491248,
+    14.136097974741747174,
+    -0.49191381609762019978,
+    0.33994649984811888699e-4,
+    0.46523628927048575665e-4,
+    -0.98374475304879564677e-4,
+    0.15808870322491248884e-3,
+    -0.21026444172410488319e-3,
+    0.21743961811521264320e-3,
+    -0.16431810653676389022e-3,
+    0.84418223983852743293e-4,
+    -0.26190838401581408670e-4,
+    0.36899182659531622704e-5
+];
+
+// Spouge approximation (suitable for large arguments)
+function lngamma(z) {
+
+    if(z < 0) return Number('0/0');
+    var x = p_ln[0];
+    for(var i = p_ln.length - 1; i > 0; --i) x += p_ln[i] / (z + i);
+    var t = z + g_ln + 0.5;
+    return .5*Math.log(2*Math.PI)+(z+.5)*Math.log(t)-t+Math.log(x)-Math.log(z);
+}
+
+module.exports = function gamma (z) {
+    if (z < 0.5) {
+        return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+    }
+    else if(z > 100) return Math.exp(lngamma(z));
+    else {
+        z -= 1;
+        var x = p[0];
+        for (var i = 1; i < g + 2; i++) {
+            x += p[i] / (z + i);
+        }
+        var t = z + g + 0.5;
+
+        return Math.sqrt(2 * Math.PI)
+            * Math.pow(t, z + 0.5)
+            * Math.exp(-t)
+            * x
+        ;
+    }
+};
+
+module.exports.log = lngamma;
+
+},{}],3:[function(require,module,exports){
+;(function () {
+
+// bind a to b -- One Way Binding
+function bind1(a, b) {
+  a(b()); b(a)
+}
+//bind a to b and b to a -- Two Way Binding
+function bind2(a, b) {
+  b(a()); a(b); b(a);
+}
+
+//---util-funtions------
+
+//check if this call is a get.
+function isGet(val) {
+  return undefined === val
+}
+
+//check if this call is a set, else, it's a listen
+function isSet(val) {
+  return 'function' !== typeof val
+}
+
+function isFunction (fun) {
+  return 'function' === typeof fun
+}
+
+function assertObservable (observable) {
+  if(!isFunction(observable))
+    throw new Error('transform expects an observable')
+  return observable
+}
+
+//trigger all listeners
+function all(ary, val) {
+  for(var k in ary)
+    ary[k](val)
+}
+
+//remove a listener
+function remove(ary, item) {
+  delete ary[ary.indexOf(item)]
+}
+
+//register a listener
+function on(emitter, event, listener) {
+  (emitter.on || emitter.addEventListener)
+    .call(emitter, event, listener, false)
+}
+
+function off(emitter, event, listener) {
+  (emitter.removeListener || emitter.removeEventListener || emitter.off)
+    .call(emitter, event, listener, false)
+}
+
+//An observable that stores a value.
+
+function value (initialValue) {
+  var _val = initialValue, listeners = []
+  observable.set = function (val) {
+    all(listeners, _val = val)
+  }
+  return observable
+
+  function observable(val) {
+    return (
+      isGet(val) ? _val
+    : isSet(val) ? all(listeners, _val = val)
+    : (listeners.push(val), val(_val), function () {
+        remove(listeners, val)
+      })
+  )}}
+  //^ if written in this style, always ends )}}
+
+/*
+##property
+observe a property of an object, works with scuttlebutt.
+could change this to work with backbone Model - but it would become ugly.
+*/
+
+function property (model, key) {
+  return function (val) {
+    return (
+      isGet(val) ? model.get(key) :
+      isSet(val) ? model.set(key, val) :
+      (on(model, 'change:'+key, val), val(model.get(key)), function () {
+        off(model, 'change:'+key, val)
+      })
+    )}}
+
+/*
+note the use of the elvis operator `?:` in chained else-if formation,
+and also the comma operator `,` which evaluates each part and then
+returns the last value.
+
+only 8 lines! that isn't much for what this baby can do!
+*/
+
+function transform (observable, down, up) {
+  assertObservable(observable)
+  return function (val) {
+    return (
+      isGet(val) ? down(observable())
+    : isSet(val) ? observable((up || down)(val))
+    : observable(function (_val) { val(down(_val)) })
+    )}}
+
+function not(observable) {
+  return transform(observable, function (v) { return !v })
+}
+
+function listen (element, event, attr, listener) {
+  function onEvent () {
+    listener(isFunction(attr) ? attr() : element[attr])
+  }
+  on(element, event, onEvent)
+  onEvent()
+  return function () {
+    off(element, event, onEvent)
+  }
+}
+
+//observe html element - aliased as `input`
+function attribute(element, attr, event) {
+  attr = attr || 'value'; event = event || 'input'
+  return function (val) {
+    return (
+      isGet(val) ? element[attr]
+    : isSet(val) ? element[attr] = val
+    : listen(element, event, attr, val)
+    )}
+}
+
+// observe a select element
+function select(element) {
+  function _attr () {
+      return element[element.selectedIndex].value;
+  }
+  function _set(val) {
+    for(var i=0; i < element.options.length; i++) {
+      if(element.options[i].value == val) element.selectedIndex = i;
+    }
+  }
+  return function (val) {
+    return (
+      isGet(val) ? element.options[element.selectedIndex].value
+    : isSet(val) ? _set(val)
+    : listen(element, 'change', _attr, val)
+    )}
+}
+
+//toggle based on an event, like mouseover, mouseout
+function toggle (el, up, down) {
+  var i = false
+  return function (val) {
+    function onUp() {
+      i || val(i = true)
+    }
+    function onDown () {
+      i && val(i = false)
+    }
+    return (
+      isGet(val) ? i
+    : isSet(val) ? undefined //read only
+    : (on(el, up, onUp), on(el, down || up, onDown), val(i), function () {
+      off(el, up, onUp); off(el, down || up, onDown)
+    })
+  )}}
+
+function error (message) {
+  throw new Error(message)
+}
+
+function compute (observables, compute) {
+  var cur = observables.map(function (e) {
+    return e()
+  }), init = true
+
+  var v = value()
+
+  observables.forEach(function (f, i) {
+    f(function (val) {
+      cur[i] = val
+      if(init) return
+      v(compute.apply(null, cur))
+    })
+  })
+  v(compute.apply(null, cur))
+  init = false
+  v(function () {
+    compute.apply(null, cur)
+  })
+
+  return v
+}
+
+function boolean (observable, truthy, falsey) {
+  return (
+    transform(observable, function (val) {
+      return val ? truthy : falsey
+    }, function (val) {
+      return val == truthy ? true : false
+    })
+  )
+}
+
+function signal () {
+  var _val, listeners = []
+  return function (val) {
+    return (
+      isGet(val) ? _val
+        : isSet(val) ? (!(_val===val) ? all(listeners, _val = val):"")
+        : (listeners.push(val), val(_val), function () {
+           remove(listeners, val)
+        })
+    )}}
+
+var exports = value
+exports.bind1     = bind1
+exports.bind2     = bind2
+exports.value     = value
+exports.not       = not
+exports.property  = property
+exports.input     =
+exports.attribute = attribute
+exports.select    = select
+exports.compute   = compute
+exports.transform = transform
+exports.boolean   = boolean
+exports.toggle    = toggle
+exports.hover     = function (e) { return toggle(e, 'mouseover', 'mouseout')}
+exports.focus     = function (e) { return toggle(e, 'focus', 'blur')}
+exports.signal    = signal
+
+if('object' === typeof module) module.exports = exports
+else                           this.observable = exports
+})()
+
+},{}]},{},[1]);
+</script>
+  </body>
+</html>
